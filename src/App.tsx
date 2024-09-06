@@ -1,25 +1,36 @@
-import { useState } from 'react'
 import './App.css'
 import {ethers }from 'ethers'
 import {sequence} from '0xsequence'
+import { ABI } from './abi'
 
-const abi = [
-  'function verifySignature(address walletAddress, bytes32 _hash, bytes calldata signature_) view external returns (bytes4)'
-];
+const VERIFYING_CONTRACT_ADDR = '0xf54A3F9f7d2fC072c0F511B79bFe0BE3812dF0A8'
+
+interface Person {
+  name: string;
+  wallet: string;
+}
 
 function App() {
-
   sequence.initWallet('AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw', {defaultNetwork:'base-sepolia'})
   const submitSignature = async () => {
     // const = sequence.
-    const wallet: any = sequence.getWallet()
+    const wallet = sequence.getWallet()
+    console.log("wallet", wallet.getAddress())
+
+    const person: Person = {
+      name: 'Bob',
+      wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB'
+    }
+
+    const chainId = await wallet.getChainId() ?? 84532
+    console.log("chainId", chainId)
 
     const typedData: sequence.utils.TypedData = {
-      domain: {
+      domain: { // Domain settings must match verifying contract
         name: "Ether Mail",
         version: "1",
-        chainId: await wallet.getChainId(),
-        verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+        chainId,
+        verifyingContract: VERIFYING_CONTRACT_ADDR,
       },
       types: {
         Person: [
@@ -27,25 +38,25 @@ function App() {
           { name: "wallet", type: "address" },
         ],
       },
-      message: {
-        name: "Bob",
-        wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
-      },
+      message: person,
+      primaryType: "Person",
     };
-     
     const signer = wallet.getSigner();
      
     const signature = await signer.signTypedData(
       typedData.domain,
       typedData.types,
-      typedData.message
+      typedData.message,
+      {
+        chainId,
+        eip6492: true,
+      }
     );
-    console.log(signature);
+    console.log(signature); // Is the type wrong for a signature? This isn't a string.
 
     const wallet1 = sequence.getWallet()
     const details = wallet1.connect({app:'signature validation'})
     const message = 'message'
-    console.log(sequence)
 
     const messageHash = ethers.hashMessage(JSON.stringify(typedData));
     console.log(messageHash)
@@ -58,32 +69,30 @@ function App() {
     // const signature = await signer.signMessage(messageHash)
     
     // console.log(signature)
-    console.log(await checkSignatureValidity(await wallet.getAddress(), messageHash, signature.result))
+    console.log(await checkSignatureValidity(await wallet.getAddress(), person, signature.result))
   }
 
-  async function checkSignatureValidity(address:string, hash: any, signature: any) {
+  async function checkSignatureValidity(address:string, person: Person, signature: string): Promise<boolean> {
     const provider = new ethers.JsonRpcProvider('https://nodes.sequence.app/base-sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw');
 
     // Contract address and signer address (update with your actual contract and signer address)
-    const contractAddress = "0x68680bc16af8f0b29471bc3196d7cbb7248810a2";
-    const contract = new ethers.Contract(contractAddress, abi, provider);
-    console.log(signature)
+    const contract = new ethers.Contract(VERIFYING_CONTRACT_ADDR, ABI, provider);
+    console.log("signature", signature)
       try {
+        const data = contract.interface.encodeFunctionData('verifySignature', [address, person, signature])
+        console.log("data", data)
           // Call the `isValidSignature` function from the contract
-          const MAGICVALUE = "0x1626ba7e"; // ERC1271 magic value for valid signature
-          const result = await contract.verifySignature(address, hash, signature);
-          console.log(result)
-          if (result === MAGICVALUE) {
-            return true
-              console.log("Signature is valid!");
-          } else {
-            return false
-              console.log("Signature is invalid!");
-          }
+          const result = await contract.verifySignature(
+            address,
+            person,
+            signature
+          );
+          console.log(`Signature is ${result ? "valid" : "invalid"}`);
+          return result;
       } catch (error) {
-        console.log(error)
-          console.error("Error calling isValidSignature:", error);
+        console.error("Error calling isValidSignature:", error);
       }
+      return false;
   }
 
   return (

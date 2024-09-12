@@ -1,17 +1,6 @@
-## Foundry
+## Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+This directory contains the smart contracts for EIP-712 signature verification.
 
 ## Usage
 
@@ -33,12 +22,6 @@ $ forge test
 $ forge fmt
 ```
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
 ### Anvil
 
 ```shell
@@ -47,20 +30,15 @@ $ anvil
 
 ### Deploy
 
-```shell
-$ forge script script/Deploy.s.sol:DeployVerifier --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
+Copy `.env.sample` to `.env` and set your private key.
 
 ```shell
-$ cast <subcommand>
+$ forge script script/Deploy.s.sol:Deploy --rpc-url <your_rpc_url> --broadcast
 ```
 
-### Help
+This will deploy the following:
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+| Contract                | Address                                      |
+| ----------------------- | -------------------------------------------- |
+| `UniversalSigValidator` | `0x15E8094b9Ba125f300b93165b908Eb1b08e1b053` |
+| `EIP712Verifier`        | `0x96943A020ad64BEfA01b208D4cc017AE8A6D0caE` |

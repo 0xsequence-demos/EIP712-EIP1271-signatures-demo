@@ -1,35 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Script, console} from "forge-std/Script.sol";
+import {SingletonDeployer, console} from "erc2470-libs/script/SingletonDeployer.s.sol";
+
 import {EIP712Verifier} from "../src/EIP712Verifier.sol";
 import {UniversalSigValidator} from "../src/UniversalSigValidator.sol";
 
-contract DeployVerifier is Script {
-    EIP712Verifier public verifier;
-
-    function setUp() public {}
-
+contract Deploy is SingletonDeployer {
     function run() public {
-        vm.startBroadcast();
+        uint256 pk = vm.envUint("PRIVATE_KEY");
 
-        verifier = new EIP712Verifier();
+        bytes32 salt = bytes32(0);
 
-        vm.stopBroadcast();
-    }
-}
+        bytes memory initCode = type(UniversalSigValidator).creationCode;
+        address usvAddr = _deployIfNotAlready("UniversalSigValidator", initCode, salt, pk);
 
-contract DeployUniversalSigValidator is Script {
-    UniversalSigValidator public validator;
-
-    function setUp() public {}
-
-    function run() public {
-        vm.startBroadcast();
-
-        // FIXME This should be deployed with a singleton factory
-        validator = new UniversalSigValidator();
-
-        vm.stopBroadcast();
+        initCode = abi.encodePacked(type(EIP712Verifier).creationCode, abi.encode(usvAddr));
+        _deployIfNotAlready("EIP712Verifier", initCode, salt, pk);
     }
 }

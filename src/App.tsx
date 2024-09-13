@@ -1,33 +1,63 @@
-import './App.css'
-import {ethers }from 'ethers'
-import {sequence} from '0xsequence'
-import { ABI } from './abi'
+import { sequence } from "0xsequence";
+import { Card, TextInput, useTheme } from "@0xsequence/design-system";
+import { ethers } from "ethers";
+import { useState } from "react";
+import { ABI } from "./abi";
+import "./App.css";
 
-const VERIFYING_CONTRACT_ADDR = '0xf54A3F9f7d2fC072c0F511B79bFe0BE3812dF0A8'
+const VERIFYING_CONTRACT_ADDR = "0x339e65cf64c58160e2f2681016a1c2841d7ef2e7";
+const RPC_URL = "https://nodes.sequence.app/sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw"
+const DEFAULT_NETWORK = "sepolia";
+const DEFAULT_NETWORK_CHAIN_ID = 11155111;
 
 interface Person {
   name: string;
   wallet: string;
+  message: string;
 }
 
 function App() {
-  sequence.initWallet('AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw', {defaultNetwork:'base-sepolia'})
-  const submitSignature = async () => {
-    // const = sequence.
+  const { setTheme } = useTheme();
+  const [isSignedIn, setIsSignedIn] = useState(false)
+  const [message, setMessage] = useState("asdf");
+  const [signature, setSignature] = useState("");
+  const [verified, setVerified] = useState<boolean | null>(null);
+
+  sequence.initWallet("AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw", {
+    defaultNetwork: DEFAULT_NETWORK,
+  });
+  setTheme("dark");
+  const wallet = sequence.getWallet();
+  const signIn = async () => {
+    
     const wallet = sequence.getWallet()
-    console.log("wallet", wallet.getAddress())
+    const details = await wallet.connect({app: 'sequence signature validation demo'})
+    
+    if(details){
+      console.log('is signed in')
+      console.log(details)
+      setIsSignedIn(true)
+    }
+    
+  }
+
+  const submitSignature = async () => {
+    console.log("wallet", wallet.getAddress());
+    console.log("message", message);
 
     const person: Person = {
-      name: 'Bob',
-      wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB'
-    }
+      name: "user",
+      wallet: wallet.getAddress(),
+      message: message,
+    };
 
-    const chainId = await wallet.getChainId() ?? 84532
-    console.log("chainId", chainId)
+    const chainId = (await wallet.getChainId()) ?? DEFAULT_NETWORK_CHAIN_ID;
+    console.log("chainId", chainId);
 
     const typedData: sequence.utils.TypedData = {
-      domain: { // Domain settings must match verifying contract
-        name: "Ether Mail",
+      domain: {
+        // Domain settings must match verifying contract
+        name: "Sequence Signature Validation Demo",
         version: "1",
         chainId,
         verifyingContract: VERIFYING_CONTRACT_ADDR,
@@ -36,70 +66,116 @@ function App() {
         Person: [
           { name: "name", type: "string" },
           { name: "wallet", type: "address" },
+          { name: "message", type: "string" },
         ],
       },
       message: person,
       primaryType: "Person",
     };
-    const signer = wallet.getSigner();
-     
-    const signature = await signer.signTypedData(
-      typedData.domain,
-      typedData.types,
-      typedData.message,
-      {
-        chainId,
-        eip6492: true,
-      }
+
+    const signer = wallet.getSigner(DEFAULT_NETWORK_CHAIN_ID);
+
+    try {
+      const signature = await signer.signTypedData(
+        typedData.domain,
+        typedData.types,
+        typedData.message,
+        {
+          chainId,
+          eip6492: true,
+        }
+      );
+      console.log("sig", signature);
+      setSignature(signature);
+      const result = await checkSignatureValidity(
+        await wallet.getAddress(),
+        person,
+        signature
+      );
+      setVerified(result);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  async function checkSignatureValidity(
+    address: string,
+    person: Person,
+    signature: string
+  ): Promise<boolean> {
+    const provider = new ethers.JsonRpcProvider(
+      RPC_URL
     );
-    console.log(signature); // Is the type wrong for a signature? This isn't a string.
-
-    const wallet1 = sequence.getWallet()
-    const details = wallet1.connect({app:'signature validation'})
-    const message = 'message'
-
-    const messageHash = ethers.hashMessage(JSON.stringify(typedData));
-    console.log(messageHash)
-
-    // const wallet = sequence.getWallet()
-    // console.log(wallet)
-    // const signer = wallet.getSigner(84532)
-    // console.log(signer)
-
-    // const signature = await signer.signMessage(messageHash)
-    
-    // console.log(signature)
-    console.log(await checkSignatureValidity(await wallet.getAddress(), person, signature.result))
-  }
-
-  async function checkSignatureValidity(address:string, person: Person, signature: string): Promise<boolean> {
-    const provider = new ethers.JsonRpcProvider('https://nodes.sequence.app/base-sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw');
-
-    // Contract address and signer address (update with your actual contract and signer address)
-    const contract = new ethers.Contract(VERIFYING_CONTRACT_ADDR, ABI, provider);
-    console.log("signature", signature)
-      try {
-        const data = contract.interface.encodeFunctionData('verifySignature', [address, person, signature])
-        console.log("data", data)
-          // Call the `isValidSignature` function from the contract
-          const result = await contract.verifySignature(
-            address,
-            person,
-            signature
-          );
-          console.log(`Signature is ${result ? "valid" : "invalid"}`);
-          return result;
-      } catch (error) {
-        console.error("Error calling isValidSignature:", error);
-      }
-      return false;
+    console.log(address, person, signature);
+    const contract = new ethers.Contract(
+      VERIFYING_CONTRACT_ADDR,
+      ABI,
+      provider
+    );
+    console.log("signature", signature);
+    try {
+      const data = contract.interface.encodeFunctionData("verifySignature", [
+        address,
+        person,
+        signature,
+      ]);
+      console.log("data", data);
+      console.log("checking on chain");
+      // Call the `isValidSignature` function from the contract
+      const result = await contract.verifySignature.staticCall(
+        address,
+        person,
+        signature
+      );
+      console.log(`Signature is ${result ? "valid" : "invalid"}`);
+      return result;
+    } catch (error) {
+      console.error("Error calling isValidSignature:", error);
+    }
+    return false;
   }
 
   return (
     <>
-      <button onClick={() => submitSignature()}>verify signature</button>
+      <h2>EIP 712 Typed On-chain Verification & 1271 Signatures</h2>
+      <p>
+        verify a typed message against an on-chain contract on{" "}
+        <span style={{ color: "yellow" }}>{DEFAULT_NETWORK}</span>
+      </p>
+      {!isSignedIn && <button onClick={() => signIn()}>sign in</button>}
+      {isSignedIn && <>
+      <br />
+      <Card>
+        <TextInput
+          placeholder="message"
+          onChange={(evt: React.ChangeEvent<HTMLInputElement>) => {
+            setMessage(evt.target.value);
+          }}
+        ></TextInput>
+        <br />
+        <br />
+        <button onClick={() => submitSignature()}>verify signature</button>
+        <br />
+      </Card>
+      <br />
+      <br />
+      {verified != null && (
+        <Card>
+          <br />
+          <span>verified?</span>
+          <span
+            style={{ marginLeft: "20px", color: verified ? "lime" : "yellow" }}
+          >
+            {verified.toString()}
+          </span>
+          <p>signature</p>
+          <p style={{ wordBreak: "break-word", maxWidth: '600px' }}>{signature.slice(0, 50)}...{signature.slice(signature.length - 50,signature.length)}</p>
+        </Card>
+      )}
+      </>
+    }     
     </>
-  )
+  );
 }
 
-export default App
+export default App;

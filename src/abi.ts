@@ -2,6 +2,26 @@ import { InterfaceAbi } from "ethers/abi";
 
 export const ABI: InterfaceAbi = [
 	{
+		"type": "constructor",
+		"inputs": [
+			{
+				"name": "erc6492SigValidator",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "ERC6492_SIG_VALIDATOR",
+		"inputs": [],
+		"outputs": [
+			{ "name": "", "type": "address", "internalType": "contract IERC6492" }
+		],
+		"stateMutability": "view"
+	},
+	{
 		"type": "function",
 		"name": "domainSeparator",
 		"inputs": [],
@@ -41,7 +61,8 @@ export const ABI: InterfaceAbi = [
 				"internalType": "struct Person",
 				"components": [
 					{ "name": "name", "type": "string", "internalType": "string" },
-					{ "name": "wallet", "type": "address", "internalType": "address" }
+					{ "name": "wallet", "type": "address", "internalType": "address" },
+					{ "name": "message", "type": "string", "internalType": "string" }
 				]
 			}
 		],
@@ -61,7 +82,8 @@ export const ABI: InterfaceAbi = [
 				"internalType": "struct Person",
 				"components": [
 					{ "name": "name", "type": "string", "internalType": "string" },
-					{ "name": "wallet", "type": "address", "internalType": "address" }
+					{ "name": "wallet", "type": "address", "internalType": "address" },
+					{ "name": "message", "type": "string", "internalType": "string" }
 				]
 			},
 			{ "name": "signature", "type": "bytes", "internalType": "bytes" }
@@ -69,6 +91,6 @@ export const ABI: InterfaceAbi = [
 		"outputs": [
 			{ "name": "success", "type": "bool", "internalType": "bool" }
 		],
-		"stateMutability": "view"
+		"stateMutability": "nonpayable"
 	}
 ] as const

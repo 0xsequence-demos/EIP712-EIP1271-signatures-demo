@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
-
-// https://eips.ethereum.org/EIPS/eip-6492
+pragma solidity ^0.8.26;
 
 import {IERC1271} from "./interfaces/IERC1271.sol";
 import {IERC6492} from "./interfaces/IERC6492.sol";
@@ -9,12 +7,12 @@ import {IERC6492} from "./interfaces/IERC6492.sol";
 error ERC1271Revert(bytes error);
 error ERC6492DeployFailed(bytes error);
 
-contract UniversalSigValidator is IERC6492 {
-    bytes32 private constant ERC6492_DETECTION_SUFFIX =
-        0x6492649264926492649264926492649264926492649264926492649264926492;
+/// UniversalSignatureValidator
+contract UniversalSignatureValidator is IERC6492 {
+    bytes32 private constant ERC6492_DETECTION_SUFFIX = 0x6492649264926492649264926492649264926492649264926492649264926492;
     bytes4 private constant ERC1271_SUCCESS = 0x1626ba7e;
 
-    function isValidSigImpl(
+    function isValidSignatureImplementation(
         address _signer,
         bytes32 _hash,
         bytes calldata _signature,
@@ -50,7 +48,7 @@ contract UniversalSigValidator is IERC6492 {
 
                 // retry, but this time assume the prefix is a prepare call
                 if (!isValid && !tryPrepare && contractCodeLen > 0) {
-                    return isValidSigImpl(_signer, _hash, _signature, allowSideEffects, true);
+                    return isValidSignatureImplementation(_signer, _hash, _signature, allowSideEffects, true);
                 }
 
                 if (contractCodeLen == 0 && isCounterfactual && !allowSideEffects) {
@@ -66,7 +64,7 @@ contract UniversalSigValidator is IERC6492 {
             } catch (bytes memory err) {
                 // retry, but this time assume the prefix is a prepare call
                 if (!tryPrepare && contractCodeLen > 0) {
-                    return isValidSigImpl(_signer, _hash, _signature, allowSideEffects, true);
+                    return isValidSignatureImplementation(_signer, _hash, _signature, allowSideEffects, true);
                 }
 
                 revert ERC1271Revert(err);
@@ -84,15 +82,15 @@ contract UniversalSigValidator is IERC6492 {
         return ecrecover(_hash, v, r, s) == _signer;
     }
 
-    function isValidSigWithSideEffects(address _signer, bytes32 _hash, bytes calldata _signature)
+    function isValidSignatureWithSideEffects(address _signer, bytes32 _hash, bytes calldata _signature)
         external
         returns (bool)
     {
-        return this.isValidSigImpl(_signer, _hash, _signature, true, false);
+        return this.isValidSignatureImplementation(_signer, _hash, _signature, true, false);
     }
 
     function isValidSig(address _signer, bytes32 _hash, bytes calldata _signature) external returns (bool) {
-        try this.isValidSigImpl(_signer, _hash, _signature, false, false) returns (bool isValid) {
+        try this.isValidSignatureImplementation(_signer, _hash, _signature, false, false) returns (bool isValid) {
             return isValid;
         } catch (bytes memory error) {
             // in order to avoid side effects from the contract getting deployed, the entire call will revert with a single byte result
@@ -113,8 +111,8 @@ contract UniversalSigValidator is IERC6492 {
 // this is a helper so we can perform validation in a single eth_call without pre-deploying a singleton
 contract ValidateSigOffchain {
     constructor(address _signer, bytes32 _hash, bytes memory _signature) {
-        UniversalSigValidator validator = new UniversalSigValidator();
-        bool isValidSig = validator.isValidSigWithSideEffects(_signer, _hash, _signature);
+        UniversalSignatureValidator validator = new UniversalSignatureValidator();
+        bool isValidSig = validator.isValidSignatureWithSideEffects(_signer, _hash, _signature);
         assembly {
             mstore(0, isValidSig)
             return(31, 1)

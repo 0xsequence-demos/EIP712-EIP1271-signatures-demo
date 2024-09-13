@@ -5,10 +5,10 @@ import { useState } from "react";
 import { ABI } from "./abi";
 import "./App.css";
 
-const VERIFYING_CONTRACT_ADDR = "0x96943A020ad64BEfA01b208D4cc017AE8A6D0caE";
-
-const DEFAULT_NETWORK = "base-sepolia";
-const DEFAULT_NETWORK_CHAIN_ID = 84532;
+const VERIFYING_CONTRACT_ADDR = "0x339e65cf64c58160e2f2681016a1c2841d7ef2e7";
+const RPC_URL = "https://nodes.sequence.app/sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw"
+const DEFAULT_NETWORK = "sepolia";
+const DEFAULT_NETWORK_CHAIN_ID = 11155111;
 
 interface Person {
   name: string;
@@ -18,6 +18,7 @@ interface Person {
 
 function App() {
   const { setTheme } = useTheme();
+  const [isSignedIn, setIsSignedIn] = useState(false)
   const [message, setMessage] = useState("asdf");
   const [signature, setSignature] = useState("");
   const [verified, setVerified] = useState<boolean | null>(null);
@@ -27,15 +28,26 @@ function App() {
   });
   setTheme("dark");
   const wallet = sequence.getWallet();
+  const signIn = async () => {
+    
+    const wallet = sequence.getWallet()
+    const details = await wallet.connect({app: 'sequence signature validation demo'})
+    
+    if(details){
+      console.log('is signed in')
+      console.log(details)
+      setIsSignedIn(true)
+    }
+    
+  }
 
   const submitSignature = async () => {
-    // const wallet = sequence.getWallet()
     console.log("wallet", wallet.getAddress());
     console.log("message", message);
 
     const person: Person = {
-      name: "Bob",
-      wallet: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+      name: "user",
+      wallet: wallet.getAddress(),
       message: message,
     };
 
@@ -45,7 +57,7 @@ function App() {
     const typedData: sequence.utils.TypedData = {
       domain: {
         // Domain settings must match verifying contract
-        name: "Ether Mail",
+        name: "Sequence Signature Validation Demo",
         version: "1",
         chainId,
         verifyingContract: VERIFYING_CONTRACT_ADDR,
@@ -61,10 +73,10 @@ function App() {
       primaryType: "Person",
     };
 
-    const signer = wallet.getSigner(84532);
+    const signer = wallet.getSigner(DEFAULT_NETWORK_CHAIN_ID);
 
     try {
-      const sig = await signer.signTypedData(
+      const signature = await signer.signTypedData(
         typedData.domain,
         typedData.types,
         typedData.message,
@@ -73,12 +85,12 @@ function App() {
           eip6492: true,
         }
       );
-      console.log("sig", sig);
-      setSignature(sig);
+      console.log("sig", signature);
+      setSignature(signature);
       const result = await checkSignatureValidity(
         await wallet.getAddress(),
         person,
-        sig
+        signature
       );
       setVerified(result);
     } catch (err) {
@@ -92,7 +104,7 @@ function App() {
     signature: string
   ): Promise<boolean> {
     const provider = new ethers.JsonRpcProvider(
-      "https://nodes.sequence.app/base-sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw"
+      RPC_URL
     );
     console.log(address, person, signature);
     const contract = new ethers.Contract(
@@ -125,11 +137,13 @@ function App() {
 
   return (
     <>
-      <h2>EIP 712 Typed Onchain Verification & 1271 Signatures</h2>
+      <h2>EIP 712 Typed On-chain Verification & 1271 Signatures</h2>
       <p>
-        verify a typed message against an onchain contract on{" "}
-        <span style={{ color: "yellow" }}>sepolia</span>
+        verify a typed message against an on-chain contract on{" "}
+        <span style={{ color: "yellow" }}>{DEFAULT_NETWORK}</span>
       </p>
+      {!isSignedIn && <button onClick={() => signIn()}>sign in</button>}
+      {isSignedIn && <>
       <br />
       <Card>
         <TextInput
@@ -155,9 +169,11 @@ function App() {
             {verified.toString()}
           </span>
           <p>signature</p>
-          <p style={{ wordBreak: "normal" }}>{signature}</p>
+          <p style={{ wordBreak: "break-word", maxWidth: '600px' }}>{signature.slice(0, 50)}...{signature.slice(signature.length - 50,signature.length)}</p>
         </Card>
       )}
+      </>
+    }     
     </>
   );
 }

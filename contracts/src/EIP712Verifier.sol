@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.26;
 
 import {IERC1271} from "./interfaces/IERC1271.sol";
 import {IERC6492} from "./interfaces/IERC6492.sol";
 
-import {ECDSA} from "solady/utils/ECDSA.sol";
-import {EIP712} from "solady/utils/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 struct Person {
     string name;
@@ -22,7 +22,8 @@ contract EIP712Verifier is EIP712 {
         0x6492649264926492649264926492649264926492649264926492649264926492;
     bytes32 private constant _PERSON_TYPEHASH = keccak256(bytes("Person(string name,address wallet,string message)"));
 
-    constructor(address erc6492SigValidator) {
+    // TODO for @dev: customize EIP712 domain in constructor e.g. EIP712("Sequence Signature Validation Demo","1")
+    constructor(address erc6492SigValidator) EIP712("Sequence Signature Validation Demo","1") {
         ERC6492_SIG_VALIDATOR = IERC6492(erc6492SigValidator);
     }
 
@@ -40,7 +41,7 @@ contract EIP712Verifier is EIP712 {
         bytes32 structHash = keccak256(
             abi.encode(_PERSON_TYPEHASH, keccak256(bytes(person.name)), person.wallet, keccak256(bytes(person.message)))
         );
-        digest = EIP712._hashTypedData(structHash);
+        digest = EIP712._hashTypedDataV4(structHash);
     }
 
     /// @dev Validates the ERC1271 signature of a signer.
@@ -59,14 +60,8 @@ contract EIP712Verifier is EIP712 {
         return false;
     }
 
-    /// @dev Domain settings for EIP712.
-    function _domainNameAndVersion() internal pure override returns (string memory name, string memory version) {
-        name = "Ether Mail";
-        version = "1";
-    }
-
     /// @dev Exposes the EIP712 domain separator.
     function domainSeparator() external view returns (bytes32) {
-        return EIP712._domainSeparator();
+        return EIP712._domainSeparatorV4();
     }
 }

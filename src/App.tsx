@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ABI } from "./abi";
 import "./App.css";
 
-const VERIFYING_CONTRACT_ADDR = "0x339e65cf64c58160e2f2681016a1c2841d7ef2e7";
+const VERIFYING_CONTRACT_ADDR = "0xB81efF8d6700b83B24AA69ABB18Ca8f9F7A356c5";
 const RPC_URL = "https://nodes.sequence.app/sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw"
 const DEFAULT_NETWORK = "sepolia";
 const DEFAULT_NETWORK_CHAIN_ID = 11155111;

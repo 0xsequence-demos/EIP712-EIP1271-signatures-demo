@@ -33,12 +33,6 @@ $ anvil
 Copy `.env.sample` to `.env` and set your private key.
 
 ```shell
-$ forge script script/Deploy.s.sol:Deploy --rpc-url <your_rpc_url> --broadcast
+$ forge create -i --rpc-url <your_rpc_url> src/UniversalSigValidator.sol:UniversalSignatureValidator
+$ forge create -i --rpc-url <your_rpc_url> src/EIP712Verifier.sol:EIP712Verifier --constructor-args <usv_address>
 ```
-
-This will deploy the following:
-
-| Contract                | Address                                      |
-| ----------------------- | -------------------------------------------- |
-| `UniversalSigValidator` | `0x15E8094b9Ba125f300b93165b908Eb1b08e1b053` |
-| `EIP712Verifier`        | `0x96943A020ad64BEfA01b208D4cc017AE8A6D0caE` |

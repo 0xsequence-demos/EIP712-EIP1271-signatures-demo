@@ -33,7 +33,7 @@ contract EIP712Verifier is EIP712 {
         returns (bool success)
     {
         bytes32 digest = personDigest(person);
-        return validateSigner(signer, digest, signature);
+        return ERC6492_SIG_VALIDATOR.isValidSig(signer, digest, signature);
     }
 
     /// @dev Returns the EIP712 hash of a person.
@@ -42,22 +42,6 @@ contract EIP712Verifier is EIP712 {
             abi.encode(_PERSON_TYPEHASH, keccak256(bytes(person.name)), person.wallet, keccak256(bytes(person.message)))
         );
         digest = EIP712._hashTypedDataV4(structHash);
-    }
-
-    /// @dev Validates the ERC1271 signature of a signer.
-    function validateSigner(address signer, bytes32 digest, bytes calldata signature) internal returns (bool success) {
-        if (signature.length >= 32) {
-            bool isCounterfactual =
-                bytes32(signature[signature.length - 32:signature.length]) == _ERC6492_DETECTION_SUFFIX;
-            if (isCounterfactual) {
-                return ERC6492_SIG_VALIDATOR.isValidSig(signer, digest, signature);
-            }
-        }
-
-        try IERC1271(signer).isValidSignature(digest, signature) returns (bytes4 magicValue) {
-            return magicValue == IERC1271.isValidSignature.selector;
-        } catch {}
-        return false;
     }
 
     /// @dev Exposes the EIP712 domain separator.

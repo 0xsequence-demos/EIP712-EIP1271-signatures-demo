@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test, stdError} from "forge-std/Test.sol";
 import {EIP712Verifier, Person} from "../src/EIP712Verifier.sol";
+import {UniversalSignatureValidator} from "../src/UniversalSigValidator.sol";
 import {ERC1271Wallet} from "./utils/ERC1271Wallet.sol";
 
 contract VerifierTest is Test {
@@ -10,7 +11,8 @@ contract VerifierTest is Test {
     ERC1271Wallet public signer;
 
     function setUp() public {
-        verifier = new EIP712Verifier();
+        address usv = address(new UniversalSignatureValidator());
+        verifier = new EIP712Verifier(usv);
         signer = new ERC1271Wallet();
     }
 

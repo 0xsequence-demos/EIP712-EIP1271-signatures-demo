@@ -5,8 +5,9 @@ import { useState } from "react";
 import { ABI } from "./abi";
 import "./App.css";
 
+const PROJECT_ACCESS_KEY = import.meta.env.VITE_PROJECT_ACCESS_KEY;
 const VERIFYING_CONTRACT_ADDR = "0xB81efF8d6700b83B24AA69ABB18Ca8f9F7A356c5";
-const RPC_URL = "https://nodes.sequence.app/sepolia/AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw"
+const RPC_URL = `https://nodes.sequence.app/sepolia/${PROJECT_ACCESS_KEY}`
 const DEFAULT_NETWORK = "sepolia";
 const DEFAULT_NETWORK_CHAIN_ID = 11155111;
 
@@ -23,7 +24,7 @@ function App() {
   const [signature, setSignature] = useState("");
   const [verified, setVerified] = useState<boolean | null>(null);
 
-  sequence.initWallet("AQAAAAAAAJbeftY2hQWuQG48gxVfoHYXKcw", {
+  sequence.initWallet(PROJECT_ACCESS_KEY, {
     defaultNetwork: DEFAULT_NETWORK,
   });
   setTheme("dark");

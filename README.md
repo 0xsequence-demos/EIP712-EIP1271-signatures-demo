@@ -10,7 +10,14 @@ A simplified user interface for signing a message with a Sequence Universal Wall
 - React / Vite
 
 ## Quickstart
-Install and run:
+
+Copy `.env.example` to `.env` and fill with your project information. To test things out, you can use the pre-provided keys in the `.env.example` file:
+
+```
+cp .env.example .env
+```
+
+### Install and run:
 
 ```shell
 pnpm install && pnpm dev

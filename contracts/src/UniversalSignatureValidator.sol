@@ -109,7 +109,7 @@ contract UniversalSignatureValidator is IERC6492 {
 }
 
 // this is a helper so we can perform validation in a single eth_call without pre-deploying a singleton
-contract ValidateSigOffchain {
+contract ValidateSignatureOffchain {
     constructor(address _signer, bytes32 _hash, bytes memory _signature) {
         UniversalSignatureValidator validator = new UniversalSignatureValidator();
         bool isValidSig = validator.isValidSignatureWithSideEffects(_signer, _hash, _signature);

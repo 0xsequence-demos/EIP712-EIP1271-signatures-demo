@@ -33,6 +33,6 @@ $ anvil
 Copy `.env.sample` to `.env` and set your private key.
 
 ```shell
-$ forge create -i --rpc-url <your_rpc_url> src/UniversalSigValidator.sol:UniversalSignatureValidator
+$ forge create -i --rpc-url <your_rpc_url> src/UniversalSignatureValidator.sol:UniversalSignatureValidator
 $ forge create -i --rpc-url <your_rpc_url> src/EIP712Verifier.sol:EIP712Verifier --constructor-args <usv_address>
 ```
